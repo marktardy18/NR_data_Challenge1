@@ -25,19 +25,17 @@ try:
         st.stop()
         
     label_mapping = {'promising': 4, 'growth': 3, 'stable': 2, 'decline': 1}
-    df['label'] = df['label'].astype(str).str.lower().str.strip().map(label_mapping).fillna(df['label'])
-    df['label'] = pd.to_numeric(df['label'], errors='coerce')
+    df['label'] = df['label'].astype(str).str.lower().str.strip().map(label_mapping)
     
     channel_mapping = {'online': 1, 'physical store': 2}
-    df['retailchannel'] = df['retailchannel'].astype(str).str.lower().str.strip().map(channel_mapping).fillna(df['retailchannel'])
-    df['retailchannel'] = pd.to_numeric(df['retailchannel'], errors='coerce')
+    df['retailchannel'] = df['retailchannel'].astype(str).str.lower().str.strip().map(channel_mapping)
     
     df = df.dropna()
     
-    st.sidebar.header("Filters")
-    
     categories = sorted(df['productcategory'].unique().tolist())
     categories.insert(0, "All")
+    
+    st.sidebar.header("Filters")
     selected_category = st.sidebar.selectbox("Product Category", categories)
     
     filtered_df = df.copy()
@@ -47,33 +45,33 @@ try:
     if filtered_df.empty:
         st.warning("No data available for the selected filters.")
     else:
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total Revenue", f"${filtered_df['purchaseamount'].sum():,.2f}")
-        c2.metric("Total Transactions", int(filtered_df['transactionid'].nunique()))
-        c3.metric("Avg Satisfaction", f"{filtered_df['customersatisfaction'].mean():.2f}/5")
-        c4.metric("Active Customers", int(filtered_df['customerid'].nunique()))
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        metric_col1.metric("Total Revenue", f"${filtered_df['purchaseamount'].sum():,.2f}")
+        metric_col2.metric("Total Transactions", int(filtered_df['transactionid'].nunique()))
+        metric_col3.metric("Avg Satisfaction", f"{filtered_df['customersatisfaction'].mean():.2f}")
+        metric_col4.metric("Active Customers", int(filtered_df['customerid'].nunique()))
         
-        col1, col2 = st.columns(2)
+        chart_col1, chart_col2 = st.columns(2)
         
-        with col1:
+        with chart_col1:
             revenue_by_region = filtered_df.groupby('customerregion', as_index=False)['purchaseamount'].sum()
             fig_region = px.bar(
                 revenue_by_region,
                 x='customerregion',
                 y='purchaseamount',
                 title='Revenue by Region',
-                labels={'customerregion': 'Region', 'purchaseamount': 'Revenue'}
+                labels={'customerregion': 'Region', 'purchaseamount': 'Revenue ($)'}
             )
             st.plotly_chart(fig_region, use_container_width=True)
             
-        with col2:
-            fig_age = px.pie(
+        with chart_col2:
+            fig_segment = px.pie(
                 filtered_df,
-                names='customeragegroup',
+                names='label',
                 values='purchaseamount',
-                title='Revenue Distribution by Age Group'
+                title='Revenue by Customer Segment (4=Promising, 1=Decline)'
             )
-            st.plotly_chart(fig_age, use_container_width=True)
+            st.plotly_chart(fig_segment, use_container_width=True)
             
         fig_scatter = px.scatter(
             filtered_df,
@@ -81,12 +79,10 @@ try:
             y='purchaseamount',
             color='label',
             title='Customer Behavior: Purchase Amount vs Satisfaction',
-            labels={'customersatisfaction': 'Customer Satisfaction', 'purchaseamount': 'Purchase Amount ($)', 'label': 'Behavior Segment (4=Promising, 1=Decline)'},
-            hover_data=['customerid', 'productcategory']
+            labels={'customersatisfaction': 'Customer Satisfaction', 'purchaseamount': 'Purchase Amount ($)', 'label': 'Behavior Segment'}
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
         
-        st.subheader("Filtered Data")
         st.dataframe(filtered_df, hide_index=True)
 
 except FileNotFoundError:
