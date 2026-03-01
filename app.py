@@ -112,6 +112,8 @@ try:
         # Quadrant Descriptions
         st.markdown("""
         ### Quadrant Analysis Guide
+        * **Red Dashed Line:** Represents the neutral customer satisfaction threshold (3.0 out of 5.0).
+        * **Green Dashed Line:** Represents the average total customer spend across the dataset.
         * **Top-Left (High Spend, < 3.0 Satisfaction): The Flight Risks.** High-value customers at immediate risk of decline or churn. They require immediate retention efforts.
         * **Top-Right (High Spend, > 3.0 Satisfaction): The Champions.** Your most loyal, high-spending, and satisfied customers.
         * **Bottom-Left (Low Spend, < 3.0 Satisfaction): The Decline Segment.** Low-value customers with poor experiences. 
