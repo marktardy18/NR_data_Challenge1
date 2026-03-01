@@ -48,11 +48,16 @@ try:
         cat_sat = cat_df['customersatisfaction'].mean()
         
         # Determine the most frequent region and sales channel
-        top_region = cat_df['customerregion'].mode()[0] if not cat_df['customerregion'].empty else "Unknown"
+        top_region_raw = cat_df['customerregion'].mode()[0] if not cat_df['customerregion'].empty else "Unknown"
         top_channel_num = cat_df['retailchannel'].mode()[0] if not cat_df['retailchannel'].empty else 1
         top_channel = "Online" if top_channel_num == 1 else "Physical Store"
         
-        region_channel_text = f"Purchases were primarily made in the {top_region} in a {top_channel}."
+        # Format region to add "ern" (e.g., West -> Western)
+        region_map = {"West": "Western", "East": "Eastern", "South": "Southern", "North": "Northern"}
+        top_region = region_map.get(top_region_raw, top_region_raw)
+        
+        # Updated string with bolded fields and formatted region
+        region_channel_text = f"Purchases were primarily sold in the **{top_region}** region in a **{top_channel}**."
         
         if cat_spend > overall_avg_spend and cat_sat < 3.0:
             st.error(f"**{selected_category} Insight:** This category is primarily in the **Top-Left Quadrant (Flight Risk)**. Due to high spending but low satisfaction, immediate retention efforts are needed for these buyers. {region_channel_text}")
