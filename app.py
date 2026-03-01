@@ -264,7 +264,7 @@ try:
     # FILTERED DATA TABLE (MOVED TO THE VERY BOTTOM)
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("📋 Filtered Data (Applies to Top Scatter Plot Selection)")
+    st.subheader("📋 Filtered Data")
     st.dataframe(filtered_df, hide_index=True, use_container_width=True)
 
 except FileNotFoundError:
