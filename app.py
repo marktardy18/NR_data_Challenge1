@@ -121,35 +121,39 @@ try:
         """)
 
     # ----------------------------------------------------------------------
-    # NEW SECTION: Unfiltered Revenue by Product Pie Chart
+    # NEW SECTION: Unfiltered Revenue by Product and Region Stacked Bar Chart
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Total Revenue by Product")
+    st.subheader("Total Revenue by Product and Region")
     
-    # Use the original UNFILTERED dataframe 'df'
-    revenue_df = df.groupby('productcategory', as_index=False)['purchaseamount'].sum()
-    revenue_df = revenue_df.sort_values(by='purchaseamount', ascending=False)
+    # Group by product category AND region to get the data for stacking
+    revenue_region_df = df.groupby(['productcategory', 'customerregion'], as_index=False)['purchaseamount'].sum()
     
-    # Create a Pie Chart for Total Revenue by Product Category
-    fig_pie = px.pie(
-        revenue_df,
-        names='productcategory',
-        values='purchaseamount',
-        title='Total Revenue per Product Category',
+    # Calculate total revenue per product category to sort the bars correctly on the x-axis
+    product_totals = revenue_region_df.groupby('productcategory')['purchaseamount'].sum().reset_index()
+    product_totals = product_totals.sort_values(by='purchaseamount', ascending=False)
+    sorted_categories = product_totals['productcategory'].tolist()
+    
+    # Create the stacked bar chart
+    fig_stacked_bar = px.bar(
+        revenue_region_df,
+        x='productcategory',
+        y='purchaseamount',
+        color='customerregion',
+        title='Total Revenue per Product Category by Region',
         labels={
             'productcategory': 'Product Category',
-            'purchaseamount': 'Total Revenue ($)'
-        }
+            'purchaseamount': 'Total Revenue ($)',
+            'customerregion': 'Region'
+        },
+        category_orders={'productcategory': sorted_categories} # Sort bars by highest total revenue
     )
     
-    # Format the data labels to show percentage and category name, and hover for exact currency
-    fig_pie.update_traces(
-        textposition='inside', 
-        textinfo='percent+label',
-        hovertemplate='<b>%{label}</b><br>Total Revenue: $%{value:,.2f}<br>Percentage: %{percent}'
-    )
+    # Format the hover labels to display as currency and ensure the chart is stacked
+    fig_stacked_bar.update_traces(hovertemplate='<b>%{x}</b> - %{data.name}<br>Total Revenue: $%{y:,.2f}')
+    fig_stacked_bar.update_layout(yaxis_title="Total Revenue ($)", barmode='stack')
     
-    st.plotly_chart(fig_pie, use_container_width=True)
+    st.plotly_chart(fig_stacked_bar, use_container_width=True)
 
     # Filtered Data Table at the bottom
     st.subheader("Filtered Data (Applies to Scatter Plot Selection)")
