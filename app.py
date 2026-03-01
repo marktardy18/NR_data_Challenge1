@@ -34,7 +34,7 @@ try:
     # Calculate the overall average spend per customer to serve as the baseline threshold
     overall_avg_spend = df.groupby('customerid')['purchaseamount'].sum().mean()
     
-    # Interactive Filter Dashboard
+    # Interactive Filter Dashboard for Scatter Plot
     st.subheader("Product Category Quadrant Analysis")
     categories = sorted(df['productcategory'].astype(str).unique().tolist())
     categories.insert(0, "All")
@@ -72,7 +72,7 @@ try:
         
     st.divider()
 
-    # Filter dataframe for the scatter plot and table
+    # Filter dataframe for the scatter plot
     filtered_df = df.copy()
     if selected_category != "All":
         filtered_df = filtered_df[filtered_df['productcategory'].isin([selected_category])]
@@ -117,9 +117,33 @@ try:
         * **Bottom-Left (Low Spend, < 3.0 Satisfaction): The Decline Segment.** Low-value customers with poor experiences. 
         * **Bottom-Right (Low Spend, > 3.0 Satisfaction): The Upsell Opportunities.** Customers who love the brand but aren't spending much yet. These are prime targets for growth and cross-selling initiatives.
         """)
-        
-        st.subheader("Filtered Data")
-        st.dataframe(filtered_df, hide_index=True)
+
+    # ----------------------------------------------------------------------
+    # NEW SECTION: Unfiltered Revenue by Product List
+    # ----------------------------------------------------------------------
+    st.divider()
+    st.subheader("Total Revenue by Product")
+    
+    # Use the original UNFILTERED dataframe 'df'
+    revenue_df = df.groupby('productcategory', as_index=False)['purchaseamount'].sum()
+    revenue_df = revenue_df.sort_values(by='purchaseamount', ascending=False)
+    
+    # Format the revenue as currency for display
+    revenue_df['purchaseamount'] = revenue_df['purchaseamount'].apply(lambda x: f"${x:,.2f}")
+    
+    # Rename columns for a cleaner display
+    revenue_df.rename(columns={
+        'productcategory': 'Product Category', 
+        'purchaseamount': 'Total Revenue'
+    }, inplace=True)
+    
+    # Display as a scrollable dataframe.
+    # A height of ~210 pixels generally restricts the view to the header + exactly 5 rows in Streamlit.
+    st.dataframe(revenue_df, height=210, hide_index=True, use_container_width=True)
+
+    # Filtered Data Table at the bottom
+    st.subheader("Filtered Data (Applies to Scatter Plot Selection)")
+    st.dataframe(filtered_df, hide_index=True)
 
 except FileNotFoundError:
     st.error("Dataset file not found in repository.")
