@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(layout="wide")
-st.title("Nova Retail Data Dashboard")
-st.subheader("Customer Behavior Lead Growth")
+st.set_page_config(layout="wide", page_title="Nova Retail Dashboard", page_icon="🛍️")
+
+# --- CUSTOM STYLING & HEADERS ---
+st.title("🛍️ Nova Retail Data Dashboard")
+st.subheader("📊 Customer Behavior Lead Growth")
 
 try:
     # Load and clean data
@@ -35,7 +37,9 @@ try:
     overall_avg_spend = df.groupby('customerid')['purchaseamount'].sum().mean()
     
     # Interactive Filter Dashboard for Scatter Plot
-    st.subheader("Product Category Quadrant Analysis")
+    st.sidebar.markdown("### ⚙️ Dashboard Controls")
+    st.subheader("🎯 Product Category Quadrant Analysis")
+    
     categories = sorted(df['productcategory'].astype(str).unique().tolist())
     categories.insert(0, "All")
     
@@ -101,30 +105,32 @@ try:
                 'average_customer_satisfaction': 'Average Customer Satisfaction',
                 'total_customer_spend': 'Total Customer Spend',
                 'productcategory': 'Product Category'
-            }
+            },
+            template='plotly_white'
         )
         
         fig.add_vline(x=3.0, line_dash="dash", line_color="red")
         fig.add_hline(y=avg_spend, line_dash="dash", line_color="green")
+        fig.update_layout(margin=dict(l=20, r=20, t=50, b=20))
         
         st.plotly_chart(fig, use_container_width=True)
         
-        # Quadrant Descriptions
-        st.markdown("""
-        ### Quadrant Analysis Guide
-        * **Red Dashed Line:** Represents the neutral customer satisfaction threshold (3.0 out of 5.0).
-        * **Green Dashed Line:** Represents the average total customer spend across the dataset.
-        * **Top-Left (High Spend, < 3.0 Satisfaction): The Flight Risks.** High-value customers at immediate risk of decline or churn. They require immediate retention efforts.
-        * **Top-Right (High Spend, > 3.0 Satisfaction): The Champions.** Your most loyal, high-spending, and satisfied customers.
-        * **Bottom-Left (Low Spend, < 3.0 Satisfaction): The Decline Segment.** Low-value customers with poor experiences. 
-        * **Bottom-Right (Low Spend, > 3.0 Satisfaction): The Upsell Opportunities.** Customers who love the brand but aren't spending much yet. These are prime targets for growth and cross-selling initiatives.
-        """)
+        # Quadrant Descriptions hidden behind a clean expander to save vertical space
+        with st.expander("📖 Read the Quadrant Analysis Guide", expanded=False):
+            st.markdown("""
+            * **Red Dashed Line:** Represents the neutral customer satisfaction threshold (3.0 out of 5.0).
+            * **Green Dashed Line:** Represents the average total customer spend across the dataset.
+            * **Top-Left (High Spend, < 3.0 Satisfaction): The Flight Risks.** High-value customers at immediate risk of decline or churn. They require immediate retention efforts.
+            * **Top-Right (High Spend, > 3.0 Satisfaction): The Champions.** Your most loyal, high-spending, and satisfied customers.
+            * **Bottom-Left (Low Spend, < 3.0 Satisfaction): The Decline Segment.** Low-value customers with poor experiences. 
+            * **Bottom-Right (Low Spend, > 3.0 Satisfaction): The Upsell Opportunities.** Customers who love the brand but aren't spending much yet. These are prime targets for growth and cross-selling initiatives.
+            """)
 
     # ----------------------------------------------------------------------
     # NEW SECTION: Unfiltered Revenue by Region and Product Stacked Bar Chart
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Total Revenue by Region and Product")
+    st.subheader("🌎 Total Revenue by Region and Product")
     
     # Group by region AND product category to get the data for stacking
     revenue_region_df = df.groupby(['customerregion', 'productcategory'], as_index=False)['purchaseamount'].sum()
@@ -146,12 +152,13 @@ try:
             'purchaseamount': 'Total Revenue ($)',
             'productcategory': 'Product Category'
         },
-        category_orders={'customerregion': sorted_regions} # Sort bars by highest total revenue
+        category_orders={'customerregion': sorted_regions},
+        template='plotly_white'
     )
     
     # Format the hover labels to display as currency and ensure the chart is stacked
     fig_stacked_bar.update_traces(hovertemplate='<b>%{x}</b> - %{data.name}<br>Total Revenue: $%{y:,.2f}')
-    fig_stacked_bar.update_layout(yaxis_title="Total Revenue ($)", barmode='stack')
+    fig_stacked_bar.update_layout(yaxis_title="Total Revenue ($)", barmode='stack', margin=dict(l=20, r=20, t=50, b=20))
     
     st.plotly_chart(fig_stacked_bar, use_container_width=True)
 
@@ -159,7 +166,7 @@ try:
     # NEW SECTION: Segments at Risk
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Segments at Risk: Immediate Attention Required")
+    st.subheader("⚠️ Segments at Risk: Immediate Attention Required")
     st.markdown("Customers in the **Flight Risk** segment represent high-value buyers whose satisfaction has dropped below the neutral threshold (< 3.0). Identifying what these customers primarily purchase is critical to minimizing revenue loss.")
     
     # Aggregate customer data from the unfiltered 'df'
@@ -177,8 +184,8 @@ try:
     revenue_at_risk = flight_risk_df['total_spend'].sum()
     customers_at_risk = flight_risk_df['customerid'].nunique()
     
-    col_risk1.metric("Revenue at Immediate Risk", f"${revenue_at_risk:,.2f}")
-    col_risk2.metric("High-Value Customers at Risk", customers_at_risk)
+    col_risk1.metric("🚨 Revenue at Immediate Risk", f"${revenue_at_risk:,.2f}")
+    col_risk2.metric("👥 High-Value Customers at Risk", customers_at_risk)
     
     if not flight_risk_df.empty:
         risk_by_product = flight_risk_df.groupby('primary_product', as_index=False)['total_spend'].sum()
@@ -188,10 +195,11 @@ try:
             y='total_spend',
             title='Revenue at Risk by Product Category',
             labels={'primary_product': 'Product Category', 'total_spend': 'Revenue at Risk ($)'},
-            text='total_spend'
+            text='total_spend',
+            template='plotly_white'
         )
         fig_risk.update_traces(marker_color='#EF553B', texttemplate='$%{text:,.2f}', textposition='outside')
-        fig_risk.update_layout(yaxis_title="Revenue at Risk ($)")
+        fig_risk.update_layout(yaxis_title="Revenue at Risk ($)", margin=dict(l=20, r=20, t=50, b=20))
         st.plotly_chart(fig_risk, use_container_width=True)
     else:
         st.success("Great news! There are currently no high-value customers in the Flight Risk quadrant.")
@@ -200,7 +208,7 @@ try:
     # NEW SECTION: Investment Focus for Maximum Growth
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Investment Focus: Maximizing Future Growth")
+    st.subheader("🚀 Investment Focus: Maximizing Future Growth")
     st.markdown("To maximize growth, NovaRetail should focus on the **Upsell Opportunity** segment. These customers love the brand (Satisfaction >= 3.0) but currently spend below the average. Targeted cross-selling, loyalty programs, and volume discounts in these key geographic areas and product lines offer the highest return on investment.")
     
     # Identify upsell opportunity customers (Spend <= Average, Satisfaction >= 3.0)
@@ -210,11 +218,12 @@ try:
     potential_growth_customers = upsell_df['customerid'].nunique()
     avg_upsell_spend = upsell_df['total_spend'].mean() if not upsell_df.empty else 0
     
-    col_growth1.metric("Customers Ripe for Upsell", potential_growth_customers)
-    col_growth2.metric("Current Avg Spend of Upsell Segment", f"${avg_upsell_spend:,.2f}")
+    col_growth1.metric("⭐ Customers Ripe for Upsell", potential_growth_customers)
+    col_growth2.metric("💸 Current Avg Spend of Upsell Segment", f"${avg_upsell_spend:,.2f}")
     
+    st.write("") # Small spacer
     # Interactive Toggle Display for Growth Opportunities
-    view_by = st.radio("View Growth Opportunities By:", ["Customer Region", "Product Category"], horizontal=True)
+    view_by = st.radio("🔍 View Growth Opportunities By:", ["Customer Region", "Product Category"], horizontal=True)
     
     if not upsell_df.empty:
         if view_by == "Customer Region":
@@ -227,7 +236,8 @@ try:
                 y='customer_count', 
                 title='Target Audience Size by Region', 
                 text='customer_count',
-                labels={'customer_count': 'Number of Customers'}
+                labels={'customer_count': 'Number of Customers'},
+                template='plotly_white'
             )
         else:
             growth_data = upsell_df.groupby('primary_product', as_index=False)['customerid'].nunique()
@@ -239,11 +249,12 @@ try:
                 y='customer_count', 
                 title='Target Audience Size by Product Category', 
                 text='customer_count',
-                labels={'customer_count': 'Number of Customers'}
+                labels={'customer_count': 'Number of Customers'},
+                template='plotly_white'
             )
             
         fig_growth.update_traces(marker_color='#2CA02C', textposition='outside')
-        fig_growth.update_layout(yaxis_title="Number of Customers Ripe for Upsell")
+        fig_growth.update_layout(yaxis_title="Number of Customers Ripe for Upsell", margin=dict(l=20, r=20, t=50, b=20))
         
         st.plotly_chart(fig_growth, use_container_width=True)
     else:
@@ -253,8 +264,8 @@ try:
     # FILTERED DATA TABLE (MOVED TO THE VERY BOTTOM)
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Filtered Data (Applies to Top Scatter Plot Selection)")
-    st.dataframe(filtered_df, hide_index=True)
+    st.subheader("📋 Filtered Data (Applies to Top Scatter Plot Selection)")
+    st.dataframe(filtered_df, hide_index=True, use_container_width=True)
 
 except FileNotFoundError:
     st.error("Dataset file not found in repository.")
