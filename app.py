@@ -42,7 +42,7 @@ try:
     if filtered_df.empty:
         st.warning("No data available for the selected filters.")
     else:
-        # Group by CustomerID and keep the most frequent/first product category for coloring
+        # Group by CustomerID and keep the first product category for coloring
         agg_df = filtered_df.groupby('customerid', as_index=False).agg(
             total_customer_spend=('purchaseamount', 'sum'),
             average_customer_satisfaction=('customersatisfaction', 'mean'),
@@ -70,6 +70,16 @@ try:
         
         st.plotly_chart(fig, use_container_width=True)
         
+        # Quadrant Descriptions
+        st.markdown("""
+        ### Quadrant Analysis Guide
+        * **Top-Left (High Spend, < 3.0 Satisfaction): The Flight Risks.** High-value customers at immediate risk of decline or churn. They require immediate retention efforts.
+        * **Top-Right (High Spend, > 3.0 Satisfaction): The Champions.** Your most loyal, high-spending, and satisfied customers.
+        * **Bottom-Left (Low Spend, < 3.0 Satisfaction): The Decline Segment.** Low-value customers with poor experiences. 
+        * **Bottom-Right (Low Spend, > 3.0 Satisfaction): The Upsell Opportunities.** Customers who love the brand but aren't spending much yet. These are prime targets for growth and cross-selling initiatives.
+        """)
+        
+        st.subheader("Filtered Data")
         st.dataframe(filtered_df, hide_index=True)
 
 except FileNotFoundError:
