@@ -121,7 +121,7 @@ try:
         """)
 
     # ----------------------------------------------------------------------
-    # NEW SECTION: Unfiltered Revenue by Product List
+    # NEW SECTION: Unfiltered Revenue by Product Bar Chart
     # ----------------------------------------------------------------------
     st.divider()
     st.subheader("Total Revenue by Product")
@@ -130,21 +130,24 @@ try:
     revenue_df = df.groupby('productcategory', as_index=False)['purchaseamount'].sum()
     revenue_df = revenue_df.sort_values(by='purchaseamount', ascending=False)
     
-    # Add Rank column at the first position
-    revenue_df.insert(0, 'Rank', range(1, len(revenue_df) + 1))
+    # Create a Bar Chart for Total Revenue by Product Category
+    fig_bar = px.bar(
+        revenue_df,
+        x='productcategory',
+        y='purchaseamount',
+        title='Total Revenue per Product Category',
+        labels={
+            'productcategory': 'Product Category',
+            'purchaseamount': 'Total Revenue ($)'
+        },
+        text='purchaseamount'  # Show the values on top of the bars
+    )
     
-    # Format the revenue as currency for display
-    revenue_df['purchaseamount'] = revenue_df['purchaseamount'].apply(lambda x: f"${x:,.2f}")
+    # Format the data labels to look like currency
+    fig_bar.update_traces(texttemplate='$%{text:,.2f}', textposition='outside')
+    fig_bar.update_layout(yaxis_title="Total Revenue ($)")
     
-    # Rename columns for a cleaner display
-    revenue_df.rename(columns={
-        'productcategory': 'Product Category', 
-        'purchaseamount': 'Total Revenue'
-    }, inplace=True)
-    
-    # Display as a scrollable dataframe.
-    # A height of ~210 pixels generally restricts the view to the header + exactly 5 rows in Streamlit.
-    st.dataframe(revenue_df, height=210, hide_index=True, use_container_width=True)
+    st.plotly_chart(fig_bar, use_container_width=True)
 
     # Filtered Data Table at the bottom
     st.subheader("Filtered Data (Applies to Scatter Plot Selection)")
