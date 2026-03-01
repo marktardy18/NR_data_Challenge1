@@ -155,10 +155,6 @@ try:
     
     st.plotly_chart(fig_stacked_bar, use_container_width=True)
 
-    # Filtered Data Table at the bottom
-    st.subheader("Filtered Data (Applies to Scatter Plot Selection)")
-    st.dataframe(filtered_df, hide_index=True)
-
     # ----------------------------------------------------------------------
     # NEW SECTION: Segments at Risk
     # ----------------------------------------------------------------------
@@ -217,22 +213,48 @@ try:
     col_growth1.metric("Customers Ripe for Upsell", potential_growth_customers)
     col_growth2.metric("Current Avg Spend of Upsell Segment", f"${avg_upsell_spend:,.2f}")
     
+    # Interactive Toggle Display for Growth Opportunities
+    view_by = st.radio("View Growth Opportunities By:", ["Customer Region", "Product Category"], horizontal=True)
+    
     if not upsell_df.empty:
-        growth_by_region = upsell_df.groupby(['primary_region', 'primary_product'], as_index=False)['customerid'].nunique()
-        growth_by_region.rename(columns={'customerid': 'customer_count'}, inplace=True)
+        if view_by == "Customer Region":
+            growth_data = upsell_df.groupby('primary_region', as_index=False)['customerid'].nunique()
+            growth_data.rename(columns={'customerid': 'customer_count', 'primary_region': 'Region'}, inplace=True)
+            
+            fig_growth = px.bar(
+                growth_data.sort_values('customer_count', ascending=False), 
+                x='Region', 
+                y='customer_count', 
+                title='Target Audience Size by Region', 
+                text='customer_count',
+                labels={'customer_count': 'Number of Customers'}
+            )
+        else:
+            growth_data = upsell_df.groupby('primary_product', as_index=False)['customerid'].nunique()
+            growth_data.rename(columns={'customerid': 'customer_count', 'primary_product': 'Product Category'}, inplace=True)
+            
+            fig_growth = px.bar(
+                growth_data.sort_values('customer_count', ascending=False), 
+                x='Product Category', 
+                y='customer_count', 
+                title='Target Audience Size by Product Category', 
+                text='customer_count',
+                labels={'customer_count': 'Number of Customers'}
+            )
+            
+        fig_growth.update_traces(marker_color='#2CA02C', textposition='outside')
+        fig_growth.update_layout(yaxis_title="Number of Customers Ripe for Upsell")
         
-        fig_growth = px.treemap(
-            growth_by_region,
-            path=[px.Constant("All Upsell Opportunities"), 'primary_region', 'primary_product'],
-            values='customer_count',
-            title='Growth Opportunities by Region and Product (Target Customer Count)',
-            color='customer_count',
-            color_continuous_scale='Greens'
-        )
-        fig_growth.update_traces(hovertemplate='<b>%{label}</b><br>Target Customers: %{value}')
         st.plotly_chart(fig_growth, use_container_width=True)
     else:
         st.info("There are currently no customers in the Upsell Opportunity quadrant.")
+
+    # ----------------------------------------------------------------------
+    # FILTERED DATA TABLE (MOVED TO THE VERY BOTTOM)
+    # ----------------------------------------------------------------------
+    st.divider()
+    st.subheader("Filtered Data (Applies to Top Scatter Plot Selection)")
+    st.dataframe(filtered_df, hide_index=True)
 
 except FileNotFoundError:
     st.error("Dataset file not found in repository.")
