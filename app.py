@@ -14,7 +14,7 @@ try:
     
     required_fields = [
         'customerid', 'purchaseamount', 'customersatisfaction', 
-        'retailchannel', 'productcategory'
+        'retailchannel', 'productcategory', 'customerregion'
     ]
     
     missing_fields = [field for field in required_fields if field not in df.columns]
@@ -47,14 +47,21 @@ try:
         cat_spend = cat_df.groupby('customerid')['purchaseamount'].sum().mean()
         cat_sat = cat_df['customersatisfaction'].mean()
         
+        # Determine the most frequent region and sales channel
+        top_region = cat_df['customerregion'].mode()[0] if not cat_df['customerregion'].empty else "Unknown"
+        top_channel_num = cat_df['retailchannel'].mode()[0] if not cat_df['retailchannel'].empty else 1
+        top_channel = "Online" if top_channel_num == 1 else "Physical Store"
+        
+        region_channel_text = f"Purchases were primarily made in the {top_region} in a {top_channel}."
+        
         if cat_spend > overall_avg_spend and cat_sat < 3.0:
-            st.error(f"**{selected_category} Insight:** This category is primarily in the **Top-Left Quadrant (Flight Risk)**. Due to high spending but low satisfaction, immediate retention efforts are needed for these buyers.")
+            st.error(f"**{selected_category} Insight:** This category is primarily in the **Top-Left Quadrant (Flight Risk)**. Due to high spending but low satisfaction, immediate retention efforts are needed for these buyers. {region_channel_text}")
         elif cat_spend > overall_avg_spend and cat_sat >= 3.0:
-            st.success(f"**{selected_category} Insight:** This category is primarily in the **Top-Right Quadrant (Champions)**. Due to high spending and high satisfaction, continue to reward and engage this loyal segment.")
+            st.success(f"**{selected_category} Insight:** This category is primarily in the **Top-Right Quadrant (Champions)**. Due to high spending and high satisfaction, continue to reward and engage this loyal segment. {region_channel_text}")
         elif cat_spend <= overall_avg_spend and cat_sat < 3.0:
-            st.warning(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Left Quadrant (Decline Segment)**. Due to low spending and low satisfaction, investigate core product or experience issues.")
+            st.warning(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Left Quadrant (Decline Segment)**. Due to low spending and low satisfaction, investigate core product or experience issues. {region_channel_text}")
         else:
-            st.info(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Right Quadrant (Upsell Opportunity)**. Due to high satisfaction and low spending, there is a growth opportunity within this segment.")
+            st.info(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Right Quadrant (Upsell Opportunity)**. Due to high satisfaction and low spending, there is a growth opportunity within this segment. {region_channel_text}")
     else:
         st.markdown("*Select a specific product category from the dropdown above to view its strategic growth insight.*")
         
