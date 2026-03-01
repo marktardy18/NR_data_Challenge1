@@ -121,32 +121,32 @@ try:
         """)
 
     # ----------------------------------------------------------------------
-    # NEW SECTION: Unfiltered Revenue by Product and Region Stacked Bar Chart
+    # NEW SECTION: Unfiltered Revenue by Region and Product Stacked Bar Chart
     # ----------------------------------------------------------------------
     st.divider()
-    st.subheader("Total Revenue by Product and Region")
+    st.subheader("Total Revenue by Region and Product")
     
-    # Group by product category AND region to get the data for stacking
-    revenue_region_df = df.groupby(['productcategory', 'customerregion'], as_index=False)['purchaseamount'].sum()
+    # Group by region AND product category to get the data for stacking
+    revenue_region_df = df.groupby(['customerregion', 'productcategory'], as_index=False)['purchaseamount'].sum()
     
-    # Calculate total revenue per product category to sort the bars correctly on the x-axis
-    product_totals = revenue_region_df.groupby('productcategory')['purchaseamount'].sum().reset_index()
-    product_totals = product_totals.sort_values(by='purchaseamount', ascending=False)
-    sorted_categories = product_totals['productcategory'].tolist()
+    # Calculate total revenue per region to sort the bars correctly on the x-axis
+    region_totals = revenue_region_df.groupby('customerregion')['purchaseamount'].sum().reset_index()
+    region_totals = region_totals.sort_values(by='purchaseamount', ascending=False)
+    sorted_regions = region_totals['customerregion'].tolist()
     
-    # Create the stacked bar chart
+    # Create the stacked bar chart (Inverse of previous: X is region, color is product)
     fig_stacked_bar = px.bar(
         revenue_region_df,
-        x='productcategory',
+        x='customerregion',
         y='purchaseamount',
-        color='customerregion',
-        title='Total Revenue per Product Category by Region',
+        color='productcategory',
+        title='Total Revenue per Region by Product Category',
         labels={
-            'productcategory': 'Product Category',
+            'customerregion': 'Region',
             'purchaseamount': 'Total Revenue ($)',
-            'customerregion': 'Region'
+            'productcategory': 'Product Category'
         },
-        category_orders={'productcategory': sorted_categories} # Sort bars by highest total revenue
+        category_orders={'customerregion': sorted_regions} # Sort bars by highest total revenue
     )
     
     # Format the hover labels to display as currency and ensure the chart is stacked
