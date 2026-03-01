@@ -128,6 +128,9 @@ try:
     revenue_df = df.groupby('productcategory', as_index=False)['purchaseamount'].sum()
     revenue_df = revenue_df.sort_values(by='purchaseamount', ascending=False)
     
+    # Add Rank column at the first position
+    revenue_df.insert(0, 'Rank', range(1, len(revenue_df) + 1))
+    
     # Format the revenue as currency for display
     revenue_df['purchaseamount'] = revenue_df['purchaseamount'].apply(lambda x: f"${x:,.2f}")
     
