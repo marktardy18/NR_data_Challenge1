@@ -7,6 +7,7 @@ st.title("Nova Retail Data Dashboard")
 st.subheader("Customer Behavior Lead Growth")
 
 try:
+    # Load and clean data
     df = pd.read_csv("NR_dataset.csv")
     
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -30,11 +31,36 @@ try:
     
     df = df.dropna()
     
-    st.sidebar.header("Filters")
+    # Calculate the overall average spend per customer to serve as the baseline threshold
+    overall_avg_spend = df.groupby('customerid')['purchaseamount'].sum().mean()
+    
+    # Interactive Filter Dashboard
+    st.subheader("Product Category Quadrant Analysis")
     categories = sorted(df['productcategory'].astype(str).unique().tolist())
     categories.insert(0, "All")
-    selected_category = st.sidebar.selectbox("Product Category", categories)
     
+    selected_category = st.selectbox("Filter by Product Category:", categories)
+    
+    # Dynamic text logic based on the selected product category
+    if selected_category != "All":
+        cat_df = df[df['productcategory'] == selected_category]
+        cat_spend = cat_df.groupby('customerid')['purchaseamount'].sum().mean()
+        cat_sat = cat_df['customersatisfaction'].mean()
+        
+        if cat_spend > overall_avg_spend and cat_sat < 3.0:
+            st.error(f"**{selected_category} Insight:** This category is primarily in the **Top-Left Quadrant (Flight Risk)**. Due to high spending but low satisfaction, immediate retention efforts are needed for these buyers.")
+        elif cat_spend > overall_avg_spend and cat_sat >= 3.0:
+            st.success(f"**{selected_category} Insight:** This category is primarily in the **Top-Right Quadrant (Champions)**. Due to high spending and high satisfaction, continue to reward and engage this loyal segment.")
+        elif cat_spend <= overall_avg_spend and cat_sat < 3.0:
+            st.warning(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Left Quadrant (Decline Segment)**. Due to low spending and low satisfaction, investigate core product or experience issues.")
+        else:
+            st.info(f"**{selected_category} Insight:** This category is primarily in the **Bottom-Right Quadrant (Upsell Opportunity)**. Due to high satisfaction and low spending, there is a growth opportunity within this segment.")
+    else:
+        st.markdown("*Select a specific product category from the dropdown above to view its strategic growth insight.*")
+        
+    st.divider()
+
+    # Filter dataframe for the scatter plot and table
     filtered_df = df.copy()
     if selected_category != "All":
         filtered_df = filtered_df[filtered_df['productcategory'].isin([selected_category])]
@@ -51,6 +77,7 @@ try:
         
         avg_spend = agg_df['total_customer_spend'].mean()
         
+        # Scatter Plot Construction
         fig = px.scatter(
             agg_df,
             x='average_customer_satisfaction',
