@@ -121,7 +121,7 @@ try:
         """)
 
     # ----------------------------------------------------------------------
-    # NEW SECTION: Unfiltered Revenue by Product Bar Chart
+    # NEW SECTION: Unfiltered Revenue by Product Pie Chart
     # ----------------------------------------------------------------------
     st.divider()
     st.subheader("Total Revenue by Product")
@@ -130,24 +130,26 @@ try:
     revenue_df = df.groupby('productcategory', as_index=False)['purchaseamount'].sum()
     revenue_df = revenue_df.sort_values(by='purchaseamount', ascending=False)
     
-    # Create a Bar Chart for Total Revenue by Product Category
-    fig_bar = px.bar(
+    # Create a Pie Chart for Total Revenue by Product Category
+    fig_pie = px.pie(
         revenue_df,
-        x='productcategory',
-        y='purchaseamount',
+        names='productcategory',
+        values='purchaseamount',
         title='Total Revenue per Product Category',
         labels={
             'productcategory': 'Product Category',
             'purchaseamount': 'Total Revenue ($)'
-        },
-        text='purchaseamount'  # Show the values on top of the bars
+        }
     )
     
-    # Format the data labels to look like currency
-    fig_bar.update_traces(texttemplate='$%{text:,.2f}', textposition='outside')
-    fig_bar.update_layout(yaxis_title="Total Revenue ($)")
+    # Format the data labels to show percentage and category name, and hover for exact currency
+    fig_pie.update_traces(
+        textposition='inside', 
+        textinfo='percent+label',
+        hovertemplate='<b>%{label}</b><br>Total Revenue: $%{value:,.2f}<br>Percentage: %{percent}'
+    )
     
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_pie, use_container_width=True)
 
     # Filtered Data Table at the bottom
     st.subheader("Filtered Data (Applies to Scatter Plot Selection)")
