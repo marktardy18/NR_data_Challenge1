@@ -42,9 +42,11 @@ try:
     if filtered_df.empty:
         st.warning("No data available for the selected filters.")
     else:
+        # Group by CustomerID and keep the most frequent/first product category for coloring
         agg_df = filtered_df.groupby('customerid', as_index=False).agg(
             total_customer_spend=('purchaseamount', 'sum'),
-            average_customer_satisfaction=('customersatisfaction', 'mean')
+            average_customer_satisfaction=('customersatisfaction', 'mean'),
+            productcategory=('productcategory', 'first')
         )
         
         avg_spend = agg_df['total_customer_spend'].mean()
@@ -53,11 +55,13 @@ try:
             agg_df,
             x='average_customer_satisfaction',
             y='total_customer_spend',
+            color='productcategory',
             hover_data=['customerid'],
             title='Flight Risk vs. Upsell Matrix: Spend vs. Satisfaction',
             labels={
                 'average_customer_satisfaction': 'Average Customer Satisfaction',
-                'total_customer_spend': 'Total Customer Spend'
+                'total_customer_spend': 'Total Customer Spend',
+                'productcategory': 'Product Category'
             }
         )
         
