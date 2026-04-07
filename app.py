@@ -31,7 +31,7 @@ try:
         df['retailchannel'] = df['retailchannel'].astype(str).str.lower().str.strip().map(channel_mapping).fillna(df['retailchannel'])
     df['retailchannel'] = pd.to_numeric(df['retailchannel'], errors='coerce')
     
-    df = df.dropna()
+    #df = df.dropna()
     
     # Calculate the overall average spend per customer to serve as the baseline threshold
     overall_avg_spend = df.groupby('customerid')['purchaseamount'].sum().mean()
