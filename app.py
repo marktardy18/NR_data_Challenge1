@@ -31,7 +31,7 @@ try:
         df['retailchannel'] = df['retailchannel'].astype(str).str.lower().str.strip().map(channel_mapping).fillna(df['retailchannel'])
     df['retailchannel'] = pd.to_numeric(df['retailchannel'], errors='coerce')
     
-    #df = df.dropna()
+    # df = df.dropna()
     
     # Calculate the overall average spend per customer to serve as the baseline threshold
     overall_avg_spend = df.groupby('customerid')['purchaseamount'].sum().mean()
@@ -40,7 +40,8 @@ try:
     st.sidebar.markdown("### ⚙️ Dashboard Controls")
     st.subheader("🎯 Product Category Quadrant Analysis")
     
-    categories = sorted(df['productcategory'].astype(str).unique().tolist())
+    # Drop NAs specifically from categories so "nan" doesn't show up in the dropdown
+    categories = sorted(df['productcategory'].dropna().astype(str).unique().tolist())
     categories.insert(0, "All")
     
     selected_category = st.selectbox("Filter by Product Category:", categories)
@@ -51,9 +52,12 @@ try:
         cat_spend = cat_df.groupby('customerid')['purchaseamount'].sum().mean()
         cat_sat = cat_df['customersatisfaction'].mean()
         
-        # Determine the most frequent region and sales channel
-        top_region_raw = cat_df['customerregion'].mode()[0] if not cat_df['customerregion'].empty else "Unknown"
-        top_channel_num = cat_df['retailchannel'].mode()[0] if not cat_df['retailchannel'].empty else 1
+        # --- BUG FIX HERE ---
+        # Instead of checking if the column is empty, we check if the result of .mode() is empty.
+        top_region_raw = cat_df['customerregion'].mode()[0] if not cat_df['customerregion'].mode().empty else "Unknown"
+        top_channel_num = cat_df['retailchannel'].mode()[0] if not cat_df['retailchannel'].mode().empty else 1
+        # --------------------
+        
         top_channel = "Online" if top_channel_num == 1 else "Physical Store"
         
         # Format region to add "ern" (e.g., West -> Western)
@@ -167,107 +171,3 @@ try:
     # ----------------------------------------------------------------------
     st.divider()
     st.subheader("⚠️ Segments at Risk: Immediate Attention Required")
-    st.markdown("Customers in the **Flight Risk** segment represent high-value buyers whose satisfaction has dropped below the neutral threshold (< 3.0). Identifying what these customers primarily purchase is critical to minimizing revenue loss.")
-    
-    # Aggregate customer data from the unfiltered 'df'
-    customer_risk_agg = df.groupby('customerid', as_index=False).agg(
-        total_spend=('purchaseamount', 'sum'),
-        avg_sat=('customersatisfaction', 'mean'),
-        primary_product=('productcategory', 'first'),
-        primary_region=('customerregion', 'first')
-    )
-    
-    # Identify flight risk customers (Spend > Average, Satisfaction < 3.0)
-    flight_risk_df = customer_risk_agg[(customer_risk_agg['total_spend'] > overall_avg_spend) & (customer_risk_agg['avg_sat'] < 3.0)]
-    
-    col_risk1, col_risk2 = st.columns(2)
-    revenue_at_risk = flight_risk_df['total_spend'].sum()
-    customers_at_risk = flight_risk_df['customerid'].nunique()
-    
-    col_risk1.metric("🚨 Revenue at Immediate Risk", f"${revenue_at_risk:,.2f}")
-    col_risk2.metric("👥 High-Value Customers at Risk", customers_at_risk)
-    
-    if not flight_risk_df.empty:
-        risk_by_product = flight_risk_df.groupby('primary_product', as_index=False)['total_spend'].sum()
-        fig_risk = px.bar(
-            risk_by_product.sort_values('total_spend', ascending=False),
-            x='primary_product',
-            y='total_spend',
-            title='Revenue at Risk by Product Category',
-            labels={'primary_product': 'Product Category', 'total_spend': 'Revenue at Risk ($)'},
-            text='total_spend',
-            template='plotly_white'
-        )
-        fig_risk.update_traces(marker_color='#EF553B', texttemplate='$%{text:,.2f}', textposition='outside')
-        fig_risk.update_layout(yaxis_title="Revenue at Risk ($)", margin=dict(l=20, r=20, t=50, b=20))
-        st.plotly_chart(fig_risk, use_container_width=True)
-    else:
-        st.success("Great news! There are currently no high-value customers in the Flight Risk quadrant.")
-        
-    # ----------------------------------------------------------------------
-    # NEW SECTION: Investment Focus for Maximum Growth
-    # ----------------------------------------------------------------------
-    st.divider()
-    st.subheader("🚀 Investment Focus: Maximizing Future Growth")
-    st.markdown("To maximize growth, NovaRetail should focus on the **Upsell Opportunity** segment. These customers love the brand (Satisfaction >= 3.0) but currently spend below the average. Targeted cross-selling, loyalty programs, and volume discounts in these key geographic areas and product lines offer the highest return on investment.")
-    
-    # Identify upsell opportunity customers (Spend <= Average, Satisfaction >= 3.0)
-    upsell_df = customer_risk_agg[(customer_risk_agg['total_spend'] <= overall_avg_spend) & (customer_risk_agg['avg_sat'] >= 3.0)]
-    
-    col_growth1, col_growth2 = st.columns(2)
-    potential_growth_customers = upsell_df['customerid'].nunique()
-    avg_upsell_spend = upsell_df['total_spend'].mean() if not upsell_df.empty else 0
-    
-    col_growth1.metric("⭐ Customers Ripe for Upsell", potential_growth_customers)
-    col_growth2.metric("💸 Current Avg Spend of Upsell Segment", f"${avg_upsell_spend:,.2f}")
-    
-    st.write("") # Small spacer
-    # Interactive Toggle Display for Growth Opportunities
-    view_by = st.radio("🔍 View Growth Opportunities By:", ["Customer Region", "Product Category"], horizontal=True)
-    
-    if not upsell_df.empty:
-        if view_by == "Customer Region":
-            growth_data = upsell_df.groupby('primary_region', as_index=False)['customerid'].nunique()
-            growth_data.rename(columns={'customerid': 'customer_count', 'primary_region': 'Region'}, inplace=True)
-            
-            fig_growth = px.bar(
-                growth_data.sort_values('customer_count', ascending=False), 
-                x='Region', 
-                y='customer_count', 
-                title='Target Audience Size by Region', 
-                text='customer_count',
-                labels={'customer_count': 'Number of Customers'},
-                template='plotly_white'
-            )
-        else:
-            growth_data = upsell_df.groupby('primary_product', as_index=False)['customerid'].nunique()
-            growth_data.rename(columns={'customerid': 'customer_count', 'primary_product': 'Product Category'}, inplace=True)
-            
-            fig_growth = px.bar(
-                growth_data.sort_values('customer_count', ascending=False), 
-                x='Product Category', 
-                y='customer_count', 
-                title='Target Audience Size by Product Category', 
-                text='customer_count',
-                labels={'customer_count': 'Number of Customers'},
-                template='plotly_white'
-            )
-            
-        fig_growth.update_traces(marker_color='#2CA02C', textposition='outside')
-        fig_growth.update_layout(yaxis_title="Number of Customers Ripe for Upsell", margin=dict(l=20, r=20, t=50, b=20))
-        
-        st.plotly_chart(fig_growth, use_container_width=True)
-    else:
-        st.info("There are currently no customers in the Upsell Opportunity quadrant.")
-
-    # ----------------------------------------------------------------------
-    # FILTERED DATA TABLE (MOVED TO THE VERY BOTTOM)
-    # ----------------------------------------------------------------------
-    st.divider()
-    st.subheader("📋 Filtered Data")
-    st.dataframe(filtered_df, hide_index=True, use_container_width=True)
-
-except FileNotFoundError:
-    st.error("Dataset file not found in repository.")
-except Exception as e:
-    st.error(f"An error occurred: {e}")
