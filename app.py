@@ -166,8 +166,12 @@ try:
     
     st.plotly_chart(fig_stacked_bar, use_container_width=True)
 
-    # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
     # NEW SECTION: Segments at Risk
     # ----------------------------------------------------------------------
     st.divider()
     st.subheader("⚠️ Segments at Risk: Immediate Attention Required")
+    st.markdown("Customers in the **Flight Risk** segment represent high-value buyers whose satisfaction has dropped below the neutral threshold (< 3.0). Identifying what these customers primarily purchase is critical to minimizing revenue loss.")
+    
+    # Aggregate customer data from the unfiltered 'df'
+    customer_risk_agg = df.groupby('customerid', as_index=False).agg(
